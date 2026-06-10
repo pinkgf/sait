@@ -8,20 +8,6 @@ use app\models\Log;
 
 class LogController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['@'], // Все авторизованные
-                    ],
-                ],
-            ],
-        ];
-    }
     
     public function actionIndex()
     {

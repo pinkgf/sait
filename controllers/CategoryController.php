@@ -8,20 +8,6 @@ use app\models\Category;
 
 class CategoryController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-        ];
-    }
     
     public function actionIndex()
     {
@@ -32,19 +18,16 @@ class CategoryController extends Controller
     public function actionAdd()
     {
         $model = new Category();
-        
         if ($_POST) {
             $model->name = $_POST['name'];
             $model->type = $_POST['type'];
             $model->created_at = time();
             $model->updated_at = time();
-            
             if ($model->save()) {
                 Yii::$app->session->setFlash('success', 'Категория добавлена');
                 return $this->redirect(['index']);
             }
         }
-        
         return $this->render('add', ['model' => $model]);
     }
     

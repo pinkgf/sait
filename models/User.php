@@ -42,7 +42,6 @@ class User extends ActiveRecord implements IdentityInterface
         return $this->auth_key === $authKey;
     }
     
-    // Блядь, просто сравниваем строки
     public function validatePassword($password)
     {
         return $this->plain_password === $password;
@@ -70,11 +69,11 @@ class User extends ActiveRecord implements IdentityInterface
     
     public function canAddIncome()
     {
-        return $this->isAdmin() || $this->permission == 'both' || $this->permission == 'income_only';
+        return $this->isAdmin() || $this->permission === 'both' || $this->permission === 'income_only';
     }
     
     public function canAddExpense()
     {
-        return $this->isAdmin() || $this->permission == 'both' || $this->permission == 'expense_only';
+        return $this->isAdmin() || $this->permission === 'both' || $this->permission === 'expense_only';
     }
 }

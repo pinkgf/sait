@@ -9,20 +9,6 @@ use app\models\Category;
 
 class CashController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['@'], // Только авторизованные
-                    ],
-                ],
-            ],
-        ];
-    }
     
     public function actionIndex()
     {

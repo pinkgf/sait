@@ -26,15 +26,36 @@ class ReportController extends Controller
     
     public function actionIndex()
     {
-        // Выбранный месяц (по умолчанию текущий)
-        $month = Yii::$app->request->get('month', date('Y-m'));
-        $year = date('Y', strtotime($month));
-        $monthNum = date('m', strtotime($month));
+        // Получаем список всех месяцев, в которых есть операции (исправленный запрос)
+        $monthsWithData = [];
+        $rawMonths = Transaction::find()
+            ->select(['DATE_FORMAT(transaction_date, "%Y-%m") as month'])
+            ->groupBy(['month'])
+            ->orderBy(['month' => SORT_DESC])
+            ->asArray()
+            ->all();
         
-        $startDate = date('Y-m-01', strtotime($month));
-        $endDate = date('Y-m-t', strtotime($month));
+        foreach ($rawMonths as $m) {
+            $timestamp = strtotime($m['month'] . '-01');
+            $monthsWithData[] = [
+                'month' => $m['month'],
+                'month_name' => date('F Y', $timestamp),
+            ];
+        }
         
-        // Все операции за месяц
+        // Выбранный месяц (по умолчанию последний месяц с операциями или текущий)
+        $selectedMonth = Yii::$app->request->get('month');
+        if (!$selectedMonth && !empty($monthsWithData)) {
+            $selectedMonth = $monthsWithData[0]['month'];
+        }
+        if (!$selectedMonth) {
+            $selectedMonth = date('Y-m');
+        }
+        
+        $startDate = $selectedMonth . '-01';
+        $endDate = date('Y-m-t', strtotime($startDate));
+        
+        // Операции за выбранный месяц
         $transactions = Transaction::find()
             ->with('category', 'creator')
             ->where(['between', 'transaction_date', $startDate, $endDate])
@@ -73,10 +94,10 @@ class ReportController extends Controller
             ->all();
         
         // Данные для графика по дням
-        $daysInMonth = date('t', strtotime($month));
+        $daysInMonth = date('t', strtotime($selectedMonth));
         $dailyData = [];
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $day = date('Y-m-d', strtotime("$month-$i"));
+            $day = date('Y-m-d', strtotime("$selectedMonth-$i"));
             $dailyData[$i] = [
                 'day' => $i,
                 'income' => Transaction::find()->where(['type' => 'income', 'transaction_date' => $day])->sum('amount') ?: 0,
@@ -84,24 +105,7 @@ class ReportController extends Controller
             ];
         }
         
-        // Список месяцев, в которых есть операции (только те, где есть данные)
-        $monthsWithData = Transaction::find()
-            ->select(['DATE_FORMAT(transaction_date, "%Y-%m") as month'])
-            ->groupBy('month')
-            ->orderBy(['month' => SORT_DESC])
-            ->asArray()
-            ->all();
-        
-        $months = [];
-        foreach ($monthsWithData as $m) {
-            $timestamp = strtotime($m['month'] . '-01');
-            $months[$m['month']] = date('F Y', $timestamp);
-        }
-        
-        // Если нет ни одной операции, показываем текущий месяц
-        if (empty($months)) {
-            $months[date('Y-m')] = date('F Y');
-        }
+        $monthName = date('F Y', strtotime($selectedMonth));
         
         return $this->render('index', [
             'transactions' => $transactions,
@@ -111,12 +115,9 @@ class ReportController extends Controller
             'incomeByCategory' => $incomeByCategory,
             'expenseByCategory' => $expenseByCategory,
             'dailyData' => $dailyData,
-            'currentMonth' => $month,
-            'months' => $months,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'monthName' => date('F Y', strtotime($month)),
-            'hasData' => !empty($transactions),
+            'selectedMonth' => $selectedMonth,
+            'monthName' => $monthName,
+            'monthsWithData' => $monthsWithData,
         ]);
     }
 }
